@@ -1,8 +1,23 @@
 {
-  "routes": [
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/reservar",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/booking",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)",
+      "destination": "/index.html"
     }
   ]
 }
