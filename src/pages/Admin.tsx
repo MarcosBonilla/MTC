@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { format } from 'date-fns';
@@ -18,7 +17,6 @@ const Admin: React.FC = () => {
     updateService,
     deleteService,
     addPortfolioItem,
-    updatePortfolioItem,
     deletePortfolioItem
   } = useApp();
   const [activeTab, setActiveTab] = useState<'appointments' | 'services' | 'portfolio' | 'settings'>('appointments');
@@ -30,7 +28,6 @@ const Admin: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Service management states
-  const [editingService, setEditingService] = useState<string | null>(null);
   const [serviceForm, setServiceForm] = useState({
     name: '',
     description: '',

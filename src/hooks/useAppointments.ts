@@ -1,7 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { appointmentService } from '../services/appointmentService';
-import type { Appointment } from '../types';
 
 export const useAppointments = () => {
   const { state } = useApp();
@@ -10,8 +8,14 @@ export const useAppointments = () => {
 
   // Filter and search appointments
   const filteredAppointments = useMemo(() => {
-    let appointments = appointmentService.filterByStatus(state.appointments, filterStatus);
+    let appointments = state.appointments;
     
+    // Filter by status
+    if (filterStatus !== 'all') {
+      appointments = appointments.filter(apt => apt.status === filterStatus);
+    }
+    
+    // Filter by search term
     if (searchTerm) {
       appointments = appointments.filter(apt => 
         apt.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -20,7 +24,12 @@ export const useAppointments = () => {
       );
     }
     
-    return appointmentService.sortAppointments(appointments);
+    // Sort by date and time
+    return appointments.sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time}`);
+      const dateB = new Date(`${b.date}T${b.time}`);
+      return dateA.getTime() - dateB.getTime();
+    });
   }, [state.appointments, filterStatus, searchTerm]);
 
   // Get appointment statistics
@@ -65,7 +74,34 @@ export const useAppointmentForm = () => {
   };
 
   const validateForm = (): boolean => {
-    const validationErrors = appointmentService.validateAppointment(formData);
+    const validationErrors: string[] = [];
+    
+    if (!formData.clientName.trim()) {
+      validationErrors.push('Name is required');
+    }
+    
+    if (!formData.clientEmail.trim()) {
+      validationErrors.push('Email is required');
+    } else if (!/\S+@\S+\.\S+/.test(formData.clientEmail)) {
+      validationErrors.push('Email is invalid');
+    }
+    
+    if (!formData.clientPhone.trim()) {
+      validationErrors.push('Phone is required');
+    }
+    
+    if (!formData.serviceId) {
+      validationErrors.push('Service is required');
+    }
+    
+    if (!formData.date) {
+      validationErrors.push('Date is required');
+    }
+    
+    if (!formData.time) {
+      validationErrors.push('Time is required');
+    }
+    
     setErrors(validationErrors);
     return validationErrors.length === 0;
   };

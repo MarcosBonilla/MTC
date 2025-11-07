@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSupabaseApp } from '../context/SupabaseAppContext';
+import { useApp } from '../context/AppContext';
 import { format } from 'date-fns';
 
 interface UnavailableDatesManagerProps {
@@ -7,7 +7,7 @@ interface UnavailableDatesManagerProps {
 }
 
 const UnavailableDatesManager: React.FC<UnavailableDatesManagerProps> = ({ className }) => {
-  const { state, addUnavailableDate, removeUnavailableDate } = useSupabaseApp();
+  const { state, addUnavailableDate, removeUnavailableDate } = useApp();
   const [newDate, setNewDate] = useState('');
   const [reason, setReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +21,7 @@ const UnavailableDatesManager: React.FC<UnavailableDatesManagerProps> = ({ class
     setError(null);
 
     try {
-      await addUnavailableDate(newDate, reason || undefined);
+      await addUnavailableDate(newDate);
       setNewDate('');
       setReason('');
     } catch (error) {
@@ -106,13 +106,13 @@ const UnavailableDatesManager: React.FC<UnavailableDatesManagerProps> = ({ class
       <div className="unavailable-dates-list">
         <h4>Current Unavailable Dates</h4>
         
-        {state.unavailableDates.length === 0 ? (
+        {state.studioSettings?.unavailableDates?.length === 0 ? (
           <p className="no-dates">No unavailable dates set.</p>
         ) : (
           <div className="dates-grid">
-            {state.unavailableDates
-              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-              .map((unavailableDate) => (
+            {(state.studioSettings?.unavailableDates || [])
+              .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+              .map((unavailableDate: any) => (
                 <div key={unavailableDate.id} className="date-card">
                   <div className="date-info">
                     <div className="date-display">

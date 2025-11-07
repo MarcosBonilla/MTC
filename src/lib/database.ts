@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { DatabaseAppointment, DatabaseService, DatabaseUnavailableDate, DatabaseStudioSettings } from './supabase'
+import type { DatabaseAppointment, DatabaseService, DatabaseStudioSettings } from './supabase'
 
 // APPOINTMENTS
 export const appointmentsAPI = {

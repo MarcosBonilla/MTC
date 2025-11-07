@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { DatabaseAppointment } from './supabase';
 
 export const cleanupDuplicateAppointments = async () => {
   try {
@@ -28,21 +29,22 @@ export const cleanupDuplicateAppointments = async () => {
       }
       acc[key].push(apt);
       return acc;
-    }, {} as Record<string, typeof appointments>);
+    }, {} as Record<string, DatabaseAppointment[]>);
 
     // Encontrar duplicados y eliminar los más recientes
     const toDelete: string[] = [];
     
     for (const [dateTime, citas] of Object.entries(groupedByDateTime)) {
-      if (citas.length > 1) {
-        console.log(`🔍 Encontrados ${citas.length} duplicados para ${dateTime}:`);
-        citas.forEach((cita: any, index: number) => {
+      const citasArray = citas as DatabaseAppointment[];
+      if (citasArray.length > 1) {
+        console.log(`🔍 Encontrados ${citasArray.length} duplicados para ${dateTime}:`);
+        citasArray.forEach((cita: DatabaseAppointment, index: number) => {
           console.log(`   ${index + 1}. ${cita.client_name} (ID: ${cita.id}) - ${cita.created_at}`);
         });
         
         // Mantener solo la primera cita (más antigua) y marcar las demás para eliminación
-        const citasToDelete = citas.slice(1);
-        citasToDelete.forEach((cita: any) => {
+        const citasToDelete = citasArray.slice(1);
+        citasToDelete.forEach((cita: DatabaseAppointment) => {
           toDelete.push(cita.id);
           console.log(`   ❌ Marcando para eliminar: ${cita.client_name} (${cita.id})`);
         });

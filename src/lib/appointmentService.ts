@@ -1,9 +1,9 @@
 import { supabase } from './supabase';
 import type { DatabaseAppointment } from './supabase';
-import type { Appointment, BookingFormData } from '../types';
+import type { BookingFormData } from '../types';
 
 // Convertir datos de la UI al formato de base de datos
-const toDatabase = (appointment: Omit<Appointment, 'id' | 'createdAt'>): Omit<DatabaseAppointment, 'id' | 'created_at' | 'updated_at'> => ({
+const toDatabase = (appointment: Omit<BookingFormData, 'id' | 'createdAt'> & { status: 'pending' | 'confirmed' | 'cancelled' | 'completed' }): Omit<DatabaseAppointment, 'id' | 'created_at' | 'updated_at'> => ({
   client_name: appointment.clientName,
   client_email: appointment.clientEmail,
   client_phone: appointment.clientPhone,
@@ -15,7 +15,7 @@ const toDatabase = (appointment: Omit<Appointment, 'id' | 'createdAt'>): Omit<Da
 });
 
 // Convertir datos de base de datos al formato de la UI
-const fromDatabase = (dbAppointment: DatabaseAppointment): Appointment => ({
+const fromDatabase = (dbAppointment: DatabaseAppointment): any => ({
   id: dbAppointment.id,
   clientName: dbAppointment.client_name,
   clientEmail: dbAppointment.client_email,
@@ -28,90 +28,9 @@ const fromDatabase = (dbAppointment: DatabaseAppointment): Appointment => ({
   createdAt: dbAppointment.created_at
 });
 
-// Validar que no haya conflictos de horario
-const validateTimeSlot = async (date: string, time: string, serviceId: string): Promise<void> => {
-  console.log(`🔍 Validando slot: ${date} ${time} para servicio ${serviceId}`);
-  
-  // Obtener todas las citas del día (usando la función del service)
-  const { data: dayAppointments, error: appointmentsError } = await supabase
-    .from('appointments')
-    .select('*')
-    .eq('date', date)
-    .neq('status', 'cancelled');
-
-  if (appointmentsError) {
-    console.error('❌ Error obteniendo citas para validación:', appointmentsError);
-    throw new Error(`Error al validar horario: ${appointmentsError.message}`);
-  }
-
-  const existingAppointments = (dayAppointments || []).map(fromDatabase);
-  
-  if (existingAppointments.length === 0) {
-    console.log('✅ No hay citas en este día, slot disponible');
-    return;
-  }
-  
-  // Obtener información del servicio que se quiere reservar
-  const { data: serviceData, error: serviceError } = await supabase
-    .from('services')
-    .select('*')
-    .eq('id', serviceId)
-    .eq('active', true)
-    .single();
-  
-  if (serviceError || !serviceData) {
-    throw new Error(`Servicio no encontrado o inactivo: ${serviceId}`);
-  }
-  
-  const currentService = {
-    id: serviceData.id,
-    name: serviceData.name,
-    duration: serviceData.duration_minutes,
-    price: serviceData.price,
-    description: serviceData.description,
-    active: serviceData.active
-  };
-  
-  console.log(`📋 Validando ${currentService.name} (${currentService.duration}min) contra ${existingAppointments.length} citas existentes`);
-  
-  // Verificar conflictos con citas existentes
-  for (const appointment of existingAppointments) {
-    // Obtener información del servicio de la cita existente
-    const { data: existingServiceData, error: existingServiceError } = await supabase
-      .from('services')
-      .select('*')
-      .eq('id', appointment.serviceId)
-      .single();
-    
-    if (existingServiceError || !existingServiceData) {
-      console.warn(`⚠️ No se pudo obtener servicio para cita ${appointment.id}, asumiendo 60min`);
-      // Asumir 60 minutos si no se puede obtener el servicio
-      var existingDuration: number = 60;
-    } else {
-      var existingDuration: number = existingServiceData.duration_minutes;
-    }
-    
-    // Calcular rangos de tiempo
-    const newStart = new Date(`2000-01-01T${time}:00`);
-    const newEnd = new Date(newStart.getTime() + currentService.duration * 60000);
-    
-    const existingStart = new Date(`2000-01-01T${appointment.time}:00`);
-    const existingEnd = new Date(existingStart.getTime() + existingDuration * 60000);
-    
-    // Verificar solapamiento
-    if (newStart < existingEnd && newEnd > existingStart) {
-      const conflictMsg = `Conflicto de horario: El slot ${time}-${newEnd.toTimeString().slice(0, 5)} se solapa con la cita existente ${appointment.time}-${existingEnd.toTimeString().slice(0, 5)} (${appointment.clientName})`;
-      console.error(`❌ ${conflictMsg}`);
-      throw new Error(conflictMsg);
-    }
-  }
-  
-  console.log('✅ Slot validado, no hay conflictos');
-};
-
 export const appointmentService = {
   // Crear nueva cita
-  async create(bookingData: BookingFormData): Promise<Appointment> {
+  async create(bookingData: BookingFormData): Promise<any> {
     console.log('🔄 Creando cita en Supabase...', bookingData);
     
     const appointmentData = toDatabase({
@@ -139,7 +58,7 @@ export const appointmentService = {
   },
 
   // Obtener todas las citas
-  async getAll(): Promise<Appointment[]> {
+  async getAll(): Promise<any[]> {
     console.log('🔄 Obteniendo todas las citas...');
     
     const { data, error } = await supabase
@@ -158,7 +77,7 @@ export const appointmentService = {
   },
 
   // Actualizar cita
-  async update(id: string, updates: Partial<Omit<Appointment, 'id' | 'createdAt'>>): Promise<Appointment> {
+  async update(id: string, updates: Partial<any>): Promise<any> {
     console.log('🔄 Actualizando cita:', id, updates);
     
     const dbUpdates: Partial<Omit<DatabaseAppointment, 'id' | 'created_at' | 'updated_at'>> = {};
@@ -210,7 +129,7 @@ export const appointmentService = {
   },
 
   // Obtener citas por fecha (para calcular disponibilidad)
-  async getByDate(date: string): Promise<Appointment[]> {
+  async getByDate(date: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('appointments')
       .select('*')
